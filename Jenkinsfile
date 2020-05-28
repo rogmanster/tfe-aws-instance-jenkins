@@ -1,5 +1,5 @@
 // Jenkinsfile
-String credentialsId = 'awsCredentials'
+String credentialsId = 'tfe_token'
 
 try {
   stage('checkout') {
@@ -12,14 +12,33 @@ try {
   // Run terraform init
   stage('init') {
     node {
-      //withCredentials([[
-      //  $class: 'AmazonWebServicesCredentialsBinding',
-      //  credentialsId: credentialsId,
-      //  accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-      //  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-      //]]) {
+      withCredentials([[
+        credentialsId: credentialsId,
+        variable: TFE_TOKEN
+      ]]) {
         ansiColor('xterm') {
-          sh 'terraform init'
+          sh '''
+            set +x
+
+            ##Create remote backend
+            cat <<EOF>remote.tf
+            terraform {
+              backend "remote" {
+                hostname     = "https://app.terraform.io/"
+                organization = "rogercorp"
+                token        = "${TFE_TOKEN}"
+
+                workspaces {
+                  name = "aws-instance-jenkins"
+                }
+              }
+            }
+EOF
+           ##Terraform Init
+           terraform init
+
+           '''
+
         }
       }
     }
