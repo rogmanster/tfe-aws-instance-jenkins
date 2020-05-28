@@ -10,8 +10,9 @@ pipeline {
         TF_HOME = tool('terraform-0.12.26')
         TF_IN_AUTOMATION = "true"
         PATH = "$TF_HOME:$PATH"
-        ACCESS_KEY = credentials('AWS_ACCESS_KEY_ID')
-        SECRET_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+        TFE_TOKEN = credentials('tfe_token')
+        //ACCESS_KEY = credentials('AWS_ACCESS_KEY_ID')
+        //SECRET_KEY = credentials('AWS_SECRET_ACCESS_KEY')
     }
     stages {
             stage('TerraformInit'){
