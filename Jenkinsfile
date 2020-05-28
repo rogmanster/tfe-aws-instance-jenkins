@@ -24,6 +24,9 @@ try {
           sh '''
             set +x
 
+            ##Fetch Terraform
+            curl -s -o terraform.zip https://releases.hashicorp.com/terraform/0.12.26/terraform_0.12.26_linux_amd64.zip ; yes | unzip terraform.zip'
+
             ##Create remote backend file
             cat <<EOF>remote.tf
             terraform {
