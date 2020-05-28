@@ -1,121 +1,80 @@
-// Jenkinsfile
-String credentialsId = 'tfe_token'
-
-try {
-  stage('checkout') {
-    node {
-      cleanWs()
-      checkout scm
+pipeline {
+    agent any
+    tools {
+        "org.jenkinsci.plugins.terraform.TerraformInstallation" "terraform-0.11.8"
     }
-  }
-
-  // Run terraform init
-  stage('init') {
-    node {
-      withCredentials([string(
-        credentialsId: 'tfe_token',
-        variable: 'TFE_TOKEN'
-      )]) {
-      //withCredentials([[
-      //  credentialsId: credentialsId,
-      //  accessKeyVariable: TFE_TOKEN
-      //]]) {
-        ansiColor('xterm') {
-          sh '''
-            set +x
-
-            ##Fetch Terraform
-            ##curl -s -o terraform.zip https://releases.hashicorp.com/terraform/0.12.26/terraform_0.12.26_linux_amd64.zip ; yes | unzip terraform.zip
-
-            ##Create remote backend file
-            cat <<EOF>remote.tf
-            terraform {
-              backend "remote" {
-                hostname     = "https://app.terraform.io/"
-                organization = "rogercorp"
-                token        = "${TFE_TOKEN}"
-
-                workspaces {
-                  name = "aws-instance-jenkins"
+    parameters {
+        string(name: 'WORKSPACE', defaultValue: 'development', description:'setting up workspace for terraform')
+    }
+    environment {
+        TF_HOME = tool('terraform-0.11.8')
+        TF_IN_AUTOMATION = "true"
+        PATH = "$TF_HOME:$PATH"
+        ACCESS_KEY = credentials('AWS_ACCESS_KEY_ID')
+        SECRET_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+    }
+    stages {
+            stage('TerraformInit'){
+            steps {
+                dir('ec2_pipeline/'){
+                    sh "terraform init -input=false"
+                    sh "echo \$PWD"
+                    sh "whoami"
                 }
-              }
             }
-EOF
-           ##Debug
-           cat remote.tf
-           pwd
-           
-           ##Terraform Init
-           terraform init
-
-           '''
-
         }
-      }
-    }
-  }
 
-  // Run terraform plan
-  stage('plan') {
-    node {
-      withCredentials([[
-        $class: 'AmazonWebServicesCredentialsBinding',
-        credentialsId: credentialsId,
-        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-      ]]) {
-        ansiColor('xterm') {
-          sh 'terraform plan'
+        stage('TerraformFormat'){
+            steps {
+                dir('ec2_pipeline/'){
+                    sh "terraform fmt -list=true -write=false -diff=true -check=true"
+                }
+            }
         }
-      }
-    }
-  }
 
-  if (env.BRANCH_NAME == 'master') {
-
-    // Run terraform apply
-    stage('apply') {
-      node {
-        withCredentials([[
-          $class: 'AmazonWebServicesCredentialsBinding',
-          credentialsId: credentialsId,
-          accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-          secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-        ]]) {
-          ansiColor('xterm') {
-            sh 'terraform apply -auto-approve'
-          }
+        stage('TerraformValidate'){
+            steps {
+                dir('ec2_pipeline/'){
+                    sh "terraform validate"
+                }
+            }
         }
-      }
-    }
 
-    // Run terraform show
-    stage('show') {
-      node {
-        withCredentials([[
-          $class: 'AmazonWebServicesCredentialsBinding',
-          credentialsId: credentialsId,
-          accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-          secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-        ]]) {
-          ansiColor('xterm') {
-            sh 'terraform show'
-          }
+        stage('TerraformPlan'){
+            steps {
+                dir('ec2_pipeline/'){
+                    script {
+                        try {
+                            sh "terraform workspace new ${params.WORKSPACE}"
+                        } catch (err) {
+                            sh "terraform workspace select ${params.WORKSPACE}"
+                        }
+                        sh "terraform plan -var 'access_key=$AWS_ACCESS_KEY_ID' -var 'secret_key=$AWS_SECRET_ACCESS_KEY' \
+                        -var-file 'terraform.tfvars' -out terraform.tfplan;echo \$? > status"
+                        stash name: "terraform-plan", includes: "terraform.tfplan"
+                    }
+                }
+            }
         }
-      }
+        stage('TerraformApply'){
+            steps {
+                script{
+                    def apply = false
+                    try {
+                        input message: 'Can you please confirm the apply', ok: 'Ready to Apply the Config'
+                        apply = true
+                    } catch (err) {
+                        apply = false
+                         currentBuild.result = 'UNSTABLE'
+                    }
+                    if(apply){
+                        dir('ec2_pipeline/'){
+                            unstash "terraform-plan"
+                            sh 'terraform apply terraform.tfplan'
+                        }
+                    }
+                }
+            }
+        }
     }
-  }
-  currentBuild.result = 'SUCCESS'
-}
-catch (org.jenkinsci.plugins.workflow.steps.FlowInterruptedException flowError) {
-  currentBuild.result = 'ABORTED'
-}
-catch (err) {
-  currentBuild.result = 'FAILURE'
-  throw err
-}
-finally {
-  if (currentBuild.result == 'SUCCESS') {
-    currentBuild.result = 'SUCCESS'
-  }
 }
