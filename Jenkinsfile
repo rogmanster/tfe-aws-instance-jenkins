@@ -20,7 +20,7 @@ try {
           sh '''
             set +x
 
-            ##Create remote backend
+            ##Create remote backend file
             cat <<EOF>remote.tf
             terraform {
               backend "remote" {
