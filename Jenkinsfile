@@ -1,81 +1,41 @@
 pipeline {
-    agent any
-    tools {
-        "org.jenkinsci.plugins.terraform.TerraformInstallation" "terraform"
-    }
-    parameters {
-        string(name: 'WORKSPACE', defaultValue: 'development', description:'setting up workspace for terraform')
-    }
-    environment {
-        TF_HOME = tool('terraform-0.12.26')
-        TF_IN_AUTOMATION = "true"
-        PATH = "$TF_HOME:$PATH"
-        TFE_TOKEN = credentials('tfe_token')
-        //ACCESS_KEY = credentials('AWS_ACCESS_KEY_ID')
-        //SECRET_KEY = credentials('AWS_SECRET_ACCESS_KEY')
-    }
-    stages {
-            stage('TerraformInit'){
-            steps {
-                dir('ec2_pipeline/'){
-                    sh "terraform init -input=false"
-                    sh "echo \$PWD"
-                    sh "whoami"
-                }
-            }
-        }
+  agent any
+  tools {
+      "org.jenkinsci.plugins.terraform.TerraformInstallation" "terraform"
+  }
+stages {
+  stage('Integration Tests') {
+      steps {
+      //sh 'curl -s -o vault.zip https://releases.hashicorp.com/vault/1.4.0/vault_1.4.0_linux_amd64.zip ; yes | unzip vault.zip'
+        withCredentials([string(credentialsId: 'tfe_token', variable: 'TFE_TOKE'))]) {
+        sh '''
+    set +x
+    ## ENV
+    ## export VAULT_ADDR=${VAULT_ADDR}
+    ## export VAULT_TOKEN=${VAULT_TOKEN}
 
-        stage('TerraformFormat'){
-            steps {
-                dir('ec2_pipeline/'){
-                    sh "terraform fmt -list=true -write=false -diff=true -check=true"
-                }
-            }
-        }
+    ##Create remote backend file
+    cat <<EOF>remote.tf
+    terraform {
+      backend "remote" {
+        hostname     = "https://app.terraform.io/"
+        organization = "rogercorp"
+        token        = "${TFE_TOKEN}"
 
-        stage('TerraformValidate'){
-            steps {
-                dir('ec2_pipeline/'){
-                    sh "terraform validate"
-                }
-            }
+        workspaces {
+          name = "aws-instance-jenkins"
         }
-
-        stage('TerraformPlan'){
-            steps {
-                dir('ec2_pipeline/'){
-                    script {
-                        try {
-                            sh "terraform workspace new ${params.WORKSPACE}"
-                        } catch (err) {
-                            sh "terraform workspace select ${params.WORKSPACE}"
-                        }
-                        sh "terraform plan -var 'access_key=$AWS_ACCESS_KEY_ID' -var 'secret_key=$AWS_SECRET_ACCESS_KEY' \
-                        -var-file 'terraform.tfvars' -out terraform.tfplan;echo \$? > status"
-                        stash name: "terraform-plan", includes: "terraform.tfplan"
-                    }
-                }
-            }
-        }
-        stage('TerraformApply'){
-            steps {
-                script{
-                    def apply = false
-                    try {
-                        input message: 'Can you please confirm the apply', ok: 'Ready to Apply the Config'
-                        apply = true
-                    } catch (err) {
-                        apply = false
-                         currentBuild.result = 'UNSTABLE'
-                    }
-                    if(apply){
-                        dir('ec2_pipeline/'){
-                            unstash "terraform-plan"
-                            sh 'terraform apply terraform.tfplan'
-                        }
-                    }
-                }
-            }
-        }
+      }
     }
+
+    cat remote.tf
+    pwd
+
+    ## Terraform Init
+    terraform init
+          '''
+    }
+   }
+  }
+ }
 }
