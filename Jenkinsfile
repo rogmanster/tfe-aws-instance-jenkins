@@ -41,6 +41,10 @@ try {
               }
             }
 EOF
+           ##Debug
+           cat remote.tf
+           pwd
+           
            ##Terraform Init
            terraform init
 
