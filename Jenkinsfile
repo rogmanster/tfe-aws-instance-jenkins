@@ -12,10 +12,14 @@ try {
   // Run terraform init
   stage('init') {
     node {
-      withCredentials([[
-        credentialsId: credentialsId,
-        variable: TFE_TOKEN
-      ]]) {
+      withCredentials([string(
+        credentialsId: 'tfe_token',
+        variable: 'TFE_TOKEN'
+      )]) {
+      //withCredentials([[
+      //  credentialsId: credentialsId,
+      //  accessKeyVariable: TFE_TOKEN
+      //]]) {
         ansiColor('xterm') {
           sh '''
             set +x
