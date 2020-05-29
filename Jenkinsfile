@@ -1,5 +1,10 @@
 pipeline {
-  agent any
+  agent {
+    docker {
+      image 'hashicorp/terraform:light'
+      args '--entrypoint='
+    }
+  }
 
   environment {
       TFE_TOKEN = credentials('tfe_token')
@@ -11,7 +16,7 @@ pipeline {
   stages {
       stage ('Check Terraform Version') {
          steps {
-           sh 'curl -s -o terraform.zip https://releases.hashicorp.com/terraform/0.12.26/terraform_0.12.26_linux_amd64.zip ; yes | unzip terraform.zip'
+           //sh 'curl -s -o terraform.zip https://releases.hashicorp.com/terraform/0.12.26/terraform_0.12.26_linux_amd64.zip ; yes | unzip terraform.zip'
            sh 'terraform --version'
            sh 'ls'
            sh 'pwd'
