@@ -31,9 +31,18 @@ pipeline {
     cat remote.tf
     pwd
     '''
+      } #steps
+    } #stage
 
-      }
-    }
-  }
+    stage('TerraformInit'){
+      steps {
+          #dir('ec2_pipeline/'){
+              sh "terraform init -input=false"
+              #sh "echo \$PWD"
+              #sh "whoami"
+      } #steps
+    } #stage
+
+  } #stages
 
 }
