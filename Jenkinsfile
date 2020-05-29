@@ -11,9 +11,9 @@ pipeline {
   stages {
       stage ('Check Terraform Version') {
          steps {
-           pwd
-           echo $PATH
-           ls
+           sh 'pwd'
+           sh 'echo $PATH'
+           sh 'ls'
            sh 'curl -s -o terraform.zip https://releases.hashicorp.com/terraform/0.12.26/terraform_0.12.26_linux_amd64.zip ; yes | unzip terraform.zip'
            sh 'terraform --version'
            sh 'ls'
