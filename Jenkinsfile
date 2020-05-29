@@ -3,11 +3,14 @@ pipeline {
   tools {
       "org.jenkinsci.plugins.terraform.TerraformInstallation" "terraform"
   }
-stages {
-  stage('Remote Stanza') {
-      steps {
-        withCredentials([string(credentialsId: 'tfe_token', variable: 'TFE_TOKEN')]) {
 
+  environment {
+      TFE_TOKEN = credentials('tfe_token')
+  }
+
+  stages {
+    stage('Remote Stanza') {
+      steps {
     sh '''
     set +x
 
@@ -27,10 +30,14 @@ stages {
 
     cat remote.tf
     pwd
-
     '''
+
+      }
+     }
     }
-   }
+
+
+
+
   }
- }
 }
