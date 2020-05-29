@@ -1,11 +1,15 @@
 pipeline {
   agent any
 
+  tools {
+      "org.jenkinsci.plugins.terraform.TerraformInstallation" "terraform-0.12.26"
+  }
+
   stages {
       stage ('Check Terraform Version') {
          steps {
             script {
-            def tfhome = tool name: 'terraform-0.12.26', type: 'org.jenkinsci.plugins.terraform.TerraformInstallation'
+            //def tfhome = tool name: 'terraform-0.12.26', type: 'org.jenkinsci.plugins.terraform.TerraformInstallation'
             env.PATH = "${tfhome}:${env.PATH}"
             sh 'terraform --version'
           }
