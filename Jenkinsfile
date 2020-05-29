@@ -1,6 +1,5 @@
 pipeline {
   agent any
-  }
 
   environment {
       TFE_TOKEN = credentials('tfe_token')
