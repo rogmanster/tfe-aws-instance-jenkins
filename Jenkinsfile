@@ -18,6 +18,7 @@ pipeline {
 
            sh '''
            curl -s -o terraform.zip https://releases.hashicorp.com/terraform/0.12.26/terraform_0.12.26_linux_amd64.zip ; yes | unzip terraform.zip
+           echo $PATH
            mv terraform /usr/bin
            terraform --version
            '''
