@@ -43,10 +43,7 @@ pipeline {
                 }
               }
             }
-
-            ls
-            pwd
-
+EOF
               '''
             }
           }
