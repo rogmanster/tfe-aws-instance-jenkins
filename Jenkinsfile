@@ -33,7 +33,7 @@ pipeline {
 
 terraform {
   backend "remote" {
-    hostname     = "https://app.terraform.io"
+    hostname     = "app.terraform.io"
     organization = "rogercorp"
     token        = "${TFE_TOKEN}"
 
