@@ -6,6 +6,9 @@ pipeline {
 
   environment {
       TFE_TOKEN = credentials('tfe_token')
+      TF_HOME = tool('terraform')
+      //TF_IN_AUTOMATION = "true"
+      PATH = "$TF_HOME:$PATH"
   }
 
   stages {
@@ -36,7 +39,7 @@ pipeline {
 
     stage('TerraformInit'){
       steps {
-          //dir('ec2_pipeline/'){
+          dir('ec2_pipeline/'){
               sh "terraform init -input=false"
               //sh "echo \$PWD"
               //sh "whoami"
