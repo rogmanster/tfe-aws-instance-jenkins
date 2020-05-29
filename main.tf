@@ -1,6 +1,6 @@
-terraform {
-  required_version = ">= 0.11.0"
-}
+//terraform {
+//  required_version = ">= 0.11.0"
+//}
 
 // Workspace Data
 data "terraform_remote_state" "aws_vpc_prod" {
