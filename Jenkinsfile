@@ -12,6 +12,7 @@ pipeline {
       stage ('Check Terraform Version') {
          steps {
            script {
+             //def tfHome = tool name: ‘Terraform’
              def tfHome = 'terraform'
              env.PATH = "${tfHome}:${env.PATH}"
            }
