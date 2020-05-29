@@ -60,5 +60,11 @@ EOF
             sh 'terraform apply -input=false --auto-approve'
           }
       }
+
+      stage ('Terraform Destroy') {
+          steps {
+            sh 'terraform destroy -input=false --auto-approve'
+          }
+      }
   }
 }
