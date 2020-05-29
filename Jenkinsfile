@@ -49,6 +49,12 @@ EOF
           }
       }
 
+      stage ('Terraform Init') {
+          steps {
+            sh 'terraform init'
+          }
+      }
+
       stage ('Terraform Apply') {
           steps {
             sh 'terraform apply -input=false --auto-approve'
