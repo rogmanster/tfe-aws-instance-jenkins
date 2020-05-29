@@ -32,17 +32,17 @@ pipeline {
             sh '''
             cat <<EOF > remote.tf
 
-            terraform {
-              backend "remote" {
-                hostname     = "https://app.terraform.io"
-                organization = "rogercorp"
-                token        = "${TFE_TOKEN}"
+terraform {
+  backend "remote" {
+    hostname     = "https://app.terraform.io"
+    organization = "rogercorp"
+    token        = "${TFE_TOKEN}"
 
-                workspaces {
-                  name = "aws-instance-jenkins"
-                }
-              }
-            }
+    workspaces {
+        name = "aws-instance-jenkins"
+    }
+  }
+}
 EOF
               '''
             }
