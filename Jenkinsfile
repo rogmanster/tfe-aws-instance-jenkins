@@ -1,9 +1,9 @@
 pipeline {
   agent any
 
-  //tools {
-  //    "org.jenkinsci.plugins.terraform.TerraformInstallation" "terraform-0.12.26"
-  //}
+  tools {
+     "org.jenkinsci.plugins.terraform.TerraformInstallation" "terraform-0.12.26"
+  }
 
   environment {
       TFE_TOKEN = credentials('tfe_token')
