@@ -52,5 +52,5 @@ pipeline {
             sh 'terraform apply -input=false --auto-approve'
           }
       }
-    }
+  }
 }
