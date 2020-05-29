@@ -1,110 +1,44 @@
-// Jenkinsfile
-String credentialsId = 'tfe_token'
+pipeline {
+  agent any
 
-try {
-  stage('checkout') {
-    node {
-      cleanWs()
-      checkout scm
-    }
+  //tools {
+  //    "org.jenkinsci.plugins.terraform.TerraformInstallation" "terraform-0.12.26"
+  //}
+
+  environment {
+      TFE_TOKEN = credentials('tfe_token')
+      //TF_HOME = tool('terraform-0.12.26')
+      //TF_IN_AUTOMATION = "true"
+      //PATH = "$TF_HOME:$PATH"
   }
 
-  // Run terraform init
-  stage('init') {
-    node {
-      withCredentials([[
-        credentialsId: credentialsId,
-        variable: TFE_TOKEN
-      ]]) {
-        ansiColor('xterm') {
-          sh '''
-            set +x
-
-            ##Create remote backend
-            cat <<EOF>remote.tf
-            terraform {
-              backend "remote" {
-                hostname     = "https://app.terraform.io/"
-                organization = "rogercorp"
-                token        = "${TFE_TOKEN}"
-
-                workspaces {
-                  name = "aws-instance-jenkins"
-                }
-              }
+  stages {
+      stage ('Check Terraform Version') {
+         steps {
+            script {
+            def tfhome = tool name: 'terraform-0.12.26', type: 'org.jenkinsci.plugins.terraform.TerraformInstallation'
+            env.PATH = "${tfhome}:${env.PATH}"
+            sh 'terraform --version'
+          }
+         }
+      }
+      stage ('Terraform Initialize & Plan'){
+          steps {
+            withCredentials([azureServicePrincipal('AzureSPN')]){
+            dir(‘dev’)
+            sh '''
+            terraform init
+            terraform plan -input=false -var 'subscription_id='$AZURE_SUBSCRIPTION_ID -var 'client_id='$AZURE_CLIENT_ID -var 'client_secret='$AZURE_CLIENT_SECRET 'tenand_id='$AZURE_TENANT_ID
+            '''
             }
-EOF
-           ##Terraform Init
-           terraform init
-
-           '''
-
-        }
-      }
-    }
-  }
-
-  // Run terraform plan
-  stage('plan') {
-    node {
-      withCredentials([[
-        $class: 'AmazonWebServicesCredentialsBinding',
-        credentialsId: credentialsId,
-        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-      ]]) {
-        ansiColor('xterm') {
-          sh 'terraform plan'
-        }
-      }
-    }
-  }
-
-  if (env.BRANCH_NAME == 'master') {
-
-    // Run terraform apply
-    stage('apply') {
-      node {
-        withCredentials([[
-          $class: 'AmazonWebServicesCredentialsBinding',
-          credentialsId: credentialsId,
-          accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-          secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-        ]]) {
-          ansiColor('xterm') {
-            sh 'terraform apply -auto-approve'
           }
-        }
       }
-    }
-
-    // Run terraform show
-    stage('show') {
-      node {
-        withCredentials([[
-          $class: 'AmazonWebServicesCredentialsBinding',
-          credentialsId: credentialsId,
-          accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-          secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-        ]]) {
-          ansiColor('xterm') {
-            sh 'terraform show'
-          }
-        }
+      stage ('Terraform Apply') {
+          steps {
+            sh '''
+            terraform apply -input=false --auto-approve
+            '''
       }
-    }
   }
-  currentBuild.result = 'SUCCESS'
 }
-catch (org.jenkinsci.plugins.workflow.steps.FlowInterruptedException flowError) {
-  currentBuild.result = 'ABORTED'
-}
-catch (err) {
-  currentBuild.result = 'FAILURE'
-  throw err
-}
-finally {
-  if (currentBuild.result == 'SUCCESS') {
-    currentBuild.result = 'SUCCESS'
-  }
 }
