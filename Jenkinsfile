@@ -11,35 +11,34 @@ pipeline {
   stages {
       stage ('Check Terraform Version') {
          steps {
-           sh 'pwd'
-           sh 'echo $PATH'
-           sh 'ls'
-           sh 'curl -s -o terraform.zip https://releases.hashicorp.com/terraform/0.12.26/terraform_0.12.26_linux_amd64.zip ; yes | unzip terraform.zip'
-           sh 'terraform --version'
-           sh 'ls'
-           sh 'pwd'
+           sh '''
+           curl -s -o terraform.zip https://releases.hashicorp.com/terraform/0.12.26/terraform_0.12.26_linux_amd64.zip ; yes | unzip terraform.zip'
+           sudo mv terraform /usr/bin
+           terraform --version
+           '''
          }
       }
+
       stage ('Create Remote Backend'){
           steps {
             withCredentials([string(credentialsId: 'tfe_token', variable: 'TFE_TOKEN')]) {
             sh '''
             cat <<EOF > remote.tf
 
-  terraform {
-     backend "remote" {
-       hostname     = "https://app.terraform.io"
-       organization = "rogercorp"
-       token        = "${TFE_TOKEN}"
+            terraform {
+              backend "remote" {
+                hostname     = "https://app.terraform.io"
+                organization = "rogercorp"
+                token        = "${TFE_TOKEN}"
 
-       workspaces {
-           name = "aws-instance-jenkins"
-       }
-     }
-   }
+                workspaces {
+                  name = "aws-instance-jenkins"
+                }
+              }
+            }
 
-   ls
-   pwd
+            ls
+            pwd
 
               '''
             }
