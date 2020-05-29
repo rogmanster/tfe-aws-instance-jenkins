@@ -27,6 +27,8 @@ stages {
 
     cat remote.tf
     pwd
+
+    '''
     }
    }
   }
