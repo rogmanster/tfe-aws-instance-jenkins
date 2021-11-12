@@ -46,6 +46,7 @@ EOF
 
       stage ('Terraform Init') {
           steps {
+            sh 'pwd'
             sh 'ls -ls'
             sh 'terraform init'
           }
