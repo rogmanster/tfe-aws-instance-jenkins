@@ -17,7 +17,6 @@ pipeline {
            curl -s -o terraform.zip https://releases.hashicorp.com/terraform/0.12.26/terraform_0.12.26_linux_amd64.zip ; yes | unzip terraform.zip
            echo $PATH
            terraform --version
-           echo $TFE_TOKEN
            '''
          }
       }
