@@ -30,8 +30,8 @@ pipeline {
 terraform {
   backend "remote" {
     hostname     = "app.terraform.io"
-    organization = "rogercorp"
     token        = "${TFE_TOKEN}"
+    organization = "rogercorp"
 
     workspaces {
         name = "aws-instance-jenkins"
