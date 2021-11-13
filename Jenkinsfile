@@ -48,7 +48,7 @@ EOF
           steps {
             sh 'pwd'
             sh 'ls -ls'
-            cat remote.tf
+            sh 'cat remote.tf'
             sh 'terraform init'
           }
       }
