@@ -37,6 +37,7 @@ data "aws_ami" "rhel_ami" {
 }
 
 provider "aws" {
+  region  = var.region
 }
 
 resource "random_id" "name" {
